@@ -1,5 +1,5 @@
 {
-  "name": "rtsp-record",
+  "name": "nvr-backend",
   "version": "1.0.0",
   "description": "node-onvif test",
   "main": "index.js",

@@ -14,6 +14,10 @@ const cameraList = [
     name: "Lobby Utama",
     url: "rtsp://admin:1407@172.16.6.106:7070/stream2",
   },
+  {
+    name: "WebCam",
+    url: "/dev/video0",
+  },
 ];
 
 let drive = "drive1";
@@ -26,10 +30,12 @@ const registerRecord = (data) => {
     timeLimit: time, // time in seconds for each segmented video file
     folder: `${__dirname}/record_datas/${drive}`,
     name: data.name,
+    directoryPathFormat: "MM-DD-YYYY",
+    fileNameFormat: "hh-mm-ss",
   });
 };
 
-let rec = registerRecord(cameraList[0]);
+let rec = registerRecord(cameraList[2]);
 
 // Starts Recording
 rec.startRecording();
@@ -39,7 +45,7 @@ setInterval(() => {
   fh.getDirectorySize(`${__dirname}/record_datas/${drive}`, (err, size) => {
     if (err) console.log(err);
 
-    if (size >= 10000000 * (80 / 100)) {
+    if (size >= 300000000 * (80 / 100)) {
       // drive === "drive1" ? (drive = "drive2") : (drive = "drive1");
       if (drive === "drive1") {
         drive = "drive2";
@@ -49,7 +55,7 @@ setInterval(() => {
         drive = "drive1";
       }
       rec = null;
-      rec = registerRecord(cameraList[0], drive);
+      rec = registerRecord(cameraList[2], drive);
       rec.startRecording();
     } else {
       rec.startRecording();
@@ -64,9 +70,9 @@ setInterval(() => {
   } else {
     other_drive = "drive1";
   }
-  const path = `${__dirname}/record_datas/${other_drive}/Gerbang Utama/${moment().format(
-    "MM-DD-YYYY"
-  )}/video/`;
+  const path = `${__dirname}/record_datas/${other_drive}/${
+    cameraList[2].name
+  }/${moment().format("MM-DD-YYYY")}/video/`;
   fs.readdir(path, (err, files) => {
     if (files) {
       fs.unlink(path + files[0], (err, d) => {
