@@ -9,3 +9,8 @@ package-lock.json
 
 # environment variables
 .env
+
+# record_datas/
+record_datas/drive1/
+record_datas/drive2/
+record_datas/drive3/
