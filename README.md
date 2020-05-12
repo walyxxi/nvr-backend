@@ -1,5 +1,5 @@
 # nvr-backend
-IP Camera RTSP record using Node.js
+Network Video Recorder (NVR) using Node.js and FFMpeg
 
 ## npm install
 ```
