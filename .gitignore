@@ -1,0 +1,20 @@
+# index.js
+index.js
+
+# logs
+logs/
+
+# node_modules
+node_modules/
+
+# package-lock.json
+package-lock.json
+
+# environment variables
+.env
+
+# record_datas/
+record_datas/
+
+# media/
+media/
