@@ -14,8 +14,9 @@ $ mkdir disk1 disk2 disk3
 ```
 
 ### run development mode
-- copy `.env.example` and rename it to `.env`
-- in `.env` please follow the instructions below
+! before run development mode, follow instruction bellow.
+- copy `.env.example` and rename it to `.env`.
+- in `.env` please follow the instructions below.
 
 ```
 APP_ENV="dev"
