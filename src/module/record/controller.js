@@ -69,7 +69,6 @@ router.post("/", (req, res) => {
         }
       });
     }, time * 1000);
-
     res.status(202).send({
       msg: `Start Record ${req.body.name}`,
     });
