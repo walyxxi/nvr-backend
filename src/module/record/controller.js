@@ -6,11 +6,12 @@ const Recorder = require("node-rtsp-recorder").Recorder;
 const FileHandler = require("node-rtsp-recorder").FileHandler;
 const fh = new FileHandler();
 const fs = require("fs");
+const glob = require("glob");
 
 let disk = "disk1";
 
 router.post("/", (req, res) => {
-  const time = 10; // time per-second
+  const time = 30; //time in second
   const dir = path.join(__dirname, `../../../record_datas`);
   try {
     const registerRecord = (data) => {
@@ -30,9 +31,9 @@ router.post("/", (req, res) => {
     setInterval(() => {
       rec.stopRecording();
       fh.getDirectorySize(`${dir}/${disk}`, (err, size) => {
-        if (err) console.log(err);
+        if (err) logger.info(err);
 
-        if (size > 5000000 * (80 / 100)) {
+        if (size > 30000000 * (80 / 100)) {
           // disk === "disk1" ? (disk = "disk2") : (disk = "disk1");
           if (disk === "disk1") {
             disk = "disk2";
@@ -41,6 +42,22 @@ router.post("/", (req, res) => {
           } else {
             disk = "disk1";
           }
+          const getDirectories = (filter, callback) => {
+            glob(`${dir}/${disk}/*/${filter}.avi`, callback);
+          };
+
+          getDirectories("*", (err2, files) => {
+            if (err2) {
+              // logger.info(err2);
+              console.log("unlink all", err2);
+            } else if (files) {
+              files.forEach((file) => {
+                fs.unlink(file, (err3) => {
+                  logger.info(`${file} was deleted.`);
+                });
+              });
+            }
+          });
           rec = null;
           rec = registerRecord(req.body);
           rec.startRecording();
@@ -61,10 +78,10 @@ router.post("/", (req, res) => {
       }
 
       const nextPath = `${dir}/${nextDisk}/${req.body.name}/`;
-      fs.readdir(nextPath, (err, files) => {
+      fs.readdir(nextPath, (err4, files) => {
         if (files) {
-          fs.unlink(nextPath + files[0], (err, d) => {
-            if (err) console.log(err);
+          fs.unlink(nextPath + files[0], (err) => {
+            logger.info(`${nextPath}${files[0]} was deleted.`);
           });
         }
       });
