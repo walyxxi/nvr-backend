@@ -8,9 +8,11 @@ const fh = new FileHandler();
 const fs = require("fs");
 const glob = require("glob");
 
-let disk = "disk1";
+this.totalDisk = 3;
+this.disk = "disk1";
+this.deleteOnDisk = null;
 
-router.post("/", (req, res) => {
+router.post("/start", (req, res) => {
   const time = 30; //time in second
   const dir = path.join(__dirname, `../../../record_datas`);
   try {
@@ -18,38 +20,40 @@ router.post("/", (req, res) => {
       return new Recorder({
         url: data.url,
         timeLimit: time, // time in seconds for each segmented video file
-        folder: `${dir}/${disk}`,
+        folder: `${dir}/${this.disk}`,
         name: data.name,
       });
     };
 
-    let rec = registerRecord(req.body);
+    this["camera" + req.body.id] = registerRecord(req.body);
 
     // Starts Recording
-    rec.startRecording();
+    this["camera" + req.body.id].startRecording();
 
-    setInterval(() => {
-      rec.stopRecording();
-      fh.getDirectorySize(`${dir}/${disk}`, (err, size) => {
+    this["interval" + req.body.id] = setInterval(() => {
+      this["camera" + req.body.id].stopRecording();
+      fh.getDirectorySize(`${dir}/${this.disk}`, (err, size) => {
         if (err) logger.info(err);
 
-        if (size > 30000000 * (80 / 100)) {
-          // disk === "disk1" ? (disk = "disk2") : (disk = "disk1");
-          if (disk === "disk1") {
-            disk = "disk2";
-          } else if (disk === "disk2") {
-            disk = "disk3";
-          } else {
-            disk = "disk1";
-          }
+        if (size > 20000000 * (80 / 100)) {
+          const setNextDisk = () => {
+            const getDiskIndex = parseInt(this.disk.slice(-1));
+            if (getDiskIndex < this.totalDisk) {
+              this.disk = "disk" + (getDiskIndex + 1);
+            } else {
+              this.disk = "disk1";
+            }
+          };
+
+          setNextDisk();
+
           const getDirectories = (filter, callback) => {
-            glob(`${dir}/${disk}/*/${filter}.avi`, callback);
+            glob(`${dir}/${this.disk}/*/${filter}.avi`, callback);
           };
 
           getDirectories("*", (err2, files) => {
             if (err2) {
-              // logger.info(err2);
-              console.log("unlink all", err2);
+              logger.info(err2);
             } else if (files) {
               files.forEach((file) => {
                 fs.unlink(file, (err3) => {
@@ -58,26 +62,29 @@ router.post("/", (req, res) => {
               });
             }
           });
-          rec = null;
-          rec = registerRecord(req.body);
-          rec.startRecording();
+
+          this["camera" + req.body.id] = null;
+          this["camera" + req.body.id] = registerRecord(req.body);
+          this["camera" + req.body.id].startRecording();
         } else {
-          rec = null;
-          rec = registerRecord(req.body);
-          rec.startRecording();
+          this["camera" + req.body.id] = null;
+          this["camera" + req.body.id] = registerRecord(req.body);
+          this["camera" + req.body.id].startRecording();
         }
       });
 
-      let nextDisk = null;
-      if (disk === "disk1") {
-        nextDisk = "disk2";
-      } else if (disk === "disk2") {
-        nextDisk = "disk3";
-      } else {
-        nextDisk = "disk1";
-      }
+      const setDeleteOnDisk = () => {
+        const getDiskIndex = parseInt(this.disk.slice(-1));
+        if (getDiskIndex < this.totalDisk) {
+          this.deleteOnDisk = "disk" + (getDiskIndex + 1);
+        } else {
+          this.deleteOnDisk = "disk1";
+        }
+      };
 
-      const nextPath = `${dir}/${nextDisk}/${req.body.name}/`;
+      setDeleteOnDisk();
+
+      const nextPath = `${dir}/${this.deleteOnDisk}/${req.body.name}/`;
       fs.readdir(nextPath, (err4, files) => {
         if (files) {
           fs.unlink(nextPath + files[0], (err) => {
@@ -88,6 +95,22 @@ router.post("/", (req, res) => {
     }, time * 1000);
     res.status(202).send({
       msg: `Start Record ${req.body.name}`,
+    });
+  } catch (error) {
+    logger.info(error);
+    res.status(400).send({
+      msg: `Record ${req.body.name} Error`,
+    });
+  }
+});
+
+router.post("/stop", (req, res) => {
+  try {
+    this["camera" + req.body.id].stopRecording();
+    this["camera" + req.body.id] = null;
+    clearInterval(this["interval" + req.body.id]);
+    res.status(202).send({
+      msg: `Stop Record ${req.body.name}`,
     });
   } catch (error) {
     logger.info(error);
