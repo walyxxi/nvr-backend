@@ -15,7 +15,6 @@ this.deleteOnDisk = null;
 router.post("/start", (req, res) => {
   const time = 30; //time in second
   const dir = path.join(__dirname, `../../../record_datas`);
-  const getDiskIndex = parseInt(this.disk.slice(-1));
   try {
     const registerRecord = (data) => {
       return new Recorder({
@@ -37,11 +36,16 @@ router.post("/start", (req, res) => {
         if (err) logger.info(err);
 
         if (size > 20000000 * (80 / 100)) {
-          if (getDiskIndex < this.totalDisk) {
-            this.disk = "disk" + (getDiskIndex + 1);
-          } else {
-            this.disk = "disk1";
-          }
+          const setNextDisk = () => {
+            const getDiskIndex = parseInt(this.disk.slice(-1));
+            if (getDiskIndex < this.totalDisk) {
+              this.disk = "disk" + (getDiskIndex + 1);
+            } else {
+              this.disk = "disk1";
+            }
+          };
+
+          setNextDisk();
 
           const getDirectories = (filter, callback) => {
             glob(`${dir}/${this.disk}/*/${filter}.avi`, callback);
@@ -69,11 +73,16 @@ router.post("/start", (req, res) => {
         }
       });
 
-      if (getDiskIndex < this.totalDisk) {
-        this.deleteOnDisk = "disk" + (getDiskIndex + 1);
-      } else {
-        this.deleteOnDisk = "disk1";
-      }
+      const setDeleteOnDisk = () => {
+        const getDiskIndex = parseInt(this.disk.slice(-1));
+        if (getDiskIndex < this.totalDisk) {
+          this.deleteOnDisk = "disk" + (getDiskIndex + 1);
+        } else {
+          this.deleteOnDisk = "disk1";
+        }
+      };
+
+      setDeleteOnDisk();
 
       const nextPath = `${dir}/${this.deleteOnDisk}/${req.body.name}/`;
       fs.readdir(nextPath, (err4, files) => {
