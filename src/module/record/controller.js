@@ -1,16 +1,15 @@
 const router = require("express").Router();
 const path = require("path");
 const { logger } = require("../../core/logger");
-const moment = require("moment");
 const Recorder = require("node-rtsp-recorder").Recorder;
 const FileHandler = require("node-rtsp-recorder").FileHandler;
 const fh = new FileHandler();
 const fs = require("fs");
 const glob = require("glob");
 
-this.totalDisk = 3;
-this.disk = "disk1";
-this.deleteOnDisk = null;
+const totalDisk = 3;
+let disk = "disk1";
+let deleteOnDisk = null;
 
 router.post("/start", (req, res) => {
   const time = 30; //time in second
@@ -20,7 +19,7 @@ router.post("/start", (req, res) => {
       return new Recorder({
         url: data.url,
         timeLimit: time, // time in seconds for each segmented video file
-        folder: `${dir}/${this.disk}`,
+        folder: `${dir}/${disk}`,
         name: data.name,
       });
     };
@@ -32,23 +31,23 @@ router.post("/start", (req, res) => {
 
     this["interval" + req.body.id] = setInterval(() => {
       this["camera" + req.body.id].stopRecording();
-      fh.getDirectorySize(`${dir}/${this.disk}`, (err, size) => {
+      fh.getDirectorySize(`${dir}/${disk}`, (err, size) => {
         if (err) logger.info(err);
 
         if (size > 20000000 * (80 / 100)) {
           const setNextDisk = () => {
-            const getDiskIndex = parseInt(this.disk.slice(-1));
-            if (getDiskIndex < this.totalDisk) {
-              this.disk = "disk" + (getDiskIndex + 1);
+            const getDiskIndex = parseInt(disk.slice(-1));
+            if (getDiskIndex < totalDisk) {
+              disk = "disk" + (getDiskIndex + 1);
             } else {
-              this.disk = "disk1";
+              disk = "disk1";
             }
           };
 
           setNextDisk();
 
           const getDirectories = (filter, callback) => {
-            glob(`${dir}/${this.disk}/*/${filter}.avi`, callback);
+            glob(`${dir}/${disk}/*/${filter}.avi`, callback);
           };
 
           getDirectories("*", (err2, files) => {
@@ -74,17 +73,17 @@ router.post("/start", (req, res) => {
       });
 
       const setDeleteOnDisk = () => {
-        const getDiskIndex = parseInt(this.disk.slice(-1));
-        if (getDiskIndex < this.totalDisk) {
-          this.deleteOnDisk = "disk" + (getDiskIndex + 1);
+        const getDiskIndex = parseInt(disk.slice(-1));
+        if (getDiskIndex < totalDisk) {
+          deleteOnDisk = "disk" + (getDiskIndex + 1);
         } else {
-          this.deleteOnDisk = "disk1";
+          deleteOnDisk = "disk1";
         }
       };
 
       setDeleteOnDisk();
 
-      const nextPath = `${dir}/${this.deleteOnDisk}/${req.body.name}/`;
+      const nextPath = `${dir}/${deleteOnDisk}/${req.body.name}/`;
       fs.readdir(nextPath, (err4, files) => {
         if (files) {
           fs.unlink(nextPath + files[0], (err) => {
