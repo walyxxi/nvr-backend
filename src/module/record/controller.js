@@ -12,7 +12,7 @@ let disk = "disk1";
 let deleteOnDisk = null;
 
 router.post("/start", (req, res) => {
-  const time = 30; //time in second
+  const time = 60; //time in second
   const dir = path.join(__dirname, `../../../record_datas`);
   try {
     const registerRecord = (data) => {
@@ -34,7 +34,7 @@ router.post("/start", (req, res) => {
       fh.getDirectorySize(`${dir}/${disk}`, (err, size) => {
         if (err) logger.info(err);
 
-        if (size > 20000000 * (80 / 100)) {
+        if (size > 50000000 * (80 / 100)) {
           const setNextDisk = () => {
             const getDiskIndex = parseInt(disk.slice(-1));
             if (getDiskIndex < totalDisk) {
@@ -85,7 +85,7 @@ router.post("/start", (req, res) => {
 
       const nextPath = `${dir}/${deleteOnDisk}/${req.body.name}/`;
       fs.readdir(nextPath, (err4, files) => {
-        if (files) {
+        if (files && files[0]) {
           fs.unlink(nextPath + files[0], (err) => {
             logger.info(`${nextPath}${files[0]} was deleted.`);
           });
