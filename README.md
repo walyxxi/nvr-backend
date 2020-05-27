@@ -10,7 +10,7 @@ $ npm install
 ```
 $ mkdir record_datas
 $ cd record_datas
-$ mkdir disk1 disk2 disk3.....diskn
+$ mkdir disk1 disk2 disk3.....disk{n}
 ```
 
 ### run development mode
