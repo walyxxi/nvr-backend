@@ -17,7 +17,10 @@ router.get("/", (req, res) => {
 
     getDirectories("*", (err, files) => {
       if (err) {
-        console.log("Error", err);
+        logger.info(err);
+        res.status(400).send({
+          msg: `No footage ${camera} found!`,
+        });
       } else if (files) {
         files.sort((a, b) => {
           const x = a.split("/")[a.split("/").length - 1];
@@ -54,31 +57,14 @@ router.get("/", (req, res) => {
 
         const duration = Math.ceil(Math.abs(endDate - startDate) / 1000); // per second
 
-        const getSecondFile = parseInt(files[0].slice(-6, -4));
+        const getSecondFiles = parseInt(files[0].slice(-6, -4));
 
         let getStartFileIndex = null;
-        if (startTimeArray[5] < getSecondFile) {
-          getStartFileIndex = files.findIndex((e) => {
-            return e.includes(
-              `${startTimeArray[0]}-${
-                startTimeArray[1].toString().slice("").length === 1
-                  ? "0" + startTimeArray[1]
-                  : startTimeArray[1]
-              }-${
-                startTimeArray[2].toString().slice("").length === 1
-                  ? "0" + startTimeArray[2]
-                  : startTimeArray[2]
-              }-${
-                startTimeArray[3].toString().slice("").length === 1
-                  ? "0" + startTimeArray[3]
-                  : startTimeArray[3]
-              }-${
-                (startTimeArray[4] - 1).toString().slice("").length === 1
-                  ? "0" + (startTimeArray[4] - 1)
-                  : startTimeArray[4] - 1
-              }`
-            );
-          });
+        if (startTimeArray[5] < getSecondFiles) {
+          getStartFileIndex =
+            files.findIndex((e) => {
+              return e.includes(startTime.slice(0, 16));
+            }) - 1;
         } else {
           getStartFileIndex = files.findIndex((e) => {
             return e.includes(startTime.slice(0, 16));
@@ -86,32 +72,15 @@ router.get("/", (req, res) => {
         }
 
         let getEndFileIndex = null;
-        if (endTimeArray[5] > getSecondFile) {
+        if (endTimeArray[5] > getSecondFiles) {
           getEndFileIndex = files.findIndex((e) => {
             return e.includes(endTime.slice(0, 16));
           });
         } else {
-          getEndFileIndex = files.findIndex((e) => {
-            return e.includes(
-              `${endTimeArray[0]}-${
-                endTimeArray[1].toString().slice("").length === 1
-                  ? "0" + endTimeArray[1]
-                  : endTimeArray[1]
-              }-${
-                endTimeArray[2].toString().slice("").length === 1
-                  ? "0" + endTimeArray[2]
-                  : endTimeArray[2]
-              }-${
-                endTimeArray[3].toString().slice("").length === 1
-                  ? "0" + endTimeArray[3]
-                  : endTimeArray[3]
-              }-${
-                (endTimeArray[4] - 1).toString().slice("").length === 1
-                  ? "0" + (endTimeArray[4] - 1)
-                  : endTimeArray[4] - 1
-              }`
-            );
-          });
+          getEndFileIndex =
+            files.findIndex((e) => {
+              return e.includes(endTime.slice(0, 16));
+            }) - 1;
         }
 
         const getStartFile = files[getStartFileIndex]
@@ -148,6 +117,18 @@ router.get("/", (req, res) => {
           .setDuration(duration)
           .on("error", (err) => {
             logger.info(err.message);
+          })
+          .on("progress", (progress) => {
+            console.log(
+              "Processing: " +
+                Math.floor(
+                  progress.percent /
+                    (getEndFileIndex - getStartFileIndex === 0
+                      ? 1
+                      : getEndFileIndex - getStartFileIndex)
+                ) +
+                "% done"
+            );
           })
           .on("end", () => {
             res.status(200).send({
